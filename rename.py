@@ -1,12 +1,18 @@
 import os
 import telebot
 from telebot import types
+from flask import Flask
+from threading import Thread
 
 # === CONFIG ===
-TOKEN = "8223270740:AAE5y9syAbgRUJys8x8nXz1ObsviHNLIjhE"
+TOKEN = os.environ.get('BOT_TOKEN')  # Get token from environment variable
 ADMIN_ID = 6899720377
 PUBLIC_CHANNEL = "@itz_4nuj1"
 PRIVATE_CHANNEL_ID = -1002267241920  # Replace with your actual private channel ID
+
+# Check if token is available
+if not TOKEN:
+    raise ValueError("❌ BOT_TOKEN environment variable is not set!")
 
 bot = telebot.TeleBot(TOKEN)
 user_data = {}
@@ -240,16 +246,7 @@ def stats_handler(message):
 
     bot.send_message(ADMIN_ID, f"📊 Bot Stats:\n\n👤 Users: *{total_users}*\n📁 Files Designed: *{total_files}*", parse_mode="Markdown")
 
-# === Start Bot ===
-try:
-    bot.polling()
-except Exception as e:
-    print("Bot Error:", e)
-    
-from flask import Flask
-from threading import Thread
-
-
+# === Flask Web Server for Keep Alive ===
 app = Flask('')
 
 @app.route('/')
@@ -260,4 +257,13 @@ def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
 def keep_alive():
-    Thread(target=run_flask).start()    
+    Thread(target=run_flask).start()
+
+# === Start Bot ===
+if __name__ == "__main__":
+    print("🤖 Bot is starting...")
+    keep_alive()
+    try:
+        bot.polling()
+    except Exception as e:
+        print("Bot Error:", e)
